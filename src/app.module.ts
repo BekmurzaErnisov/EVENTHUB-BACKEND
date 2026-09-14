@@ -19,13 +19,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) =>
-        configService.get('database')!
+        configService.get('database')!,
     }),
     UsersModule,
-    AuthModule, 
-    EventsModule, 
-    CategoriesModule, 
-    RegistrationsModule],
+    AuthModule,
+    EventsModule,
+    CategoriesModule,
+    RegistrationsModule,
+  ],
   controllers: [AppController],
   providers: [],
 })
