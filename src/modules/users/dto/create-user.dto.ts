@@ -5,6 +5,7 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Email обязятелен' })
   email: string;
 
+  @IsString()
   @IsNotEmpty({ message: 'Пароль обязятелен' })
   @MinLength(6, { message: 'Пароль должен быть не менее 6 символов' })
   password: string;
