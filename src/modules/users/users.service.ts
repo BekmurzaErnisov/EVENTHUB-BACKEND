@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -17,7 +17,7 @@ export class UsersService {
       where: { email: dto.email },
     });
     if (existingUser) {
-      throw new BadRequestException(
+      throw new ConflictException(
         'Пользователь с таким email уже существует',
       );
     }
@@ -30,9 +30,11 @@ export class UsersService {
       name: dto.name,
     });
 
-    const saveUser = await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
 
-    return saveUser;
+    const { passwordHash: _, ...result } = savedUser
+    
+    return savedUser;
   }
 
   async findByEmail(email: string): Promise<User | null> {
