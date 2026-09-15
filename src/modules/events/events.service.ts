@@ -61,6 +61,7 @@ export class EventsService {
 
   async findAll(query: GetEventQueryDto): Promise<Event[]> {
     const { categoryId, search } = query;
+
     const queryBuilder = this.eventsRepository
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.category', 'category')
@@ -77,5 +78,23 @@ export class EventsService {
     }
 
     return queryBuilder.getMany();
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const event = await this.eventsRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.organizer', 'organizer')
+      .where('event.id = :id', { id })
+      .getOne();
+
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
+    }
+
+    if (event.organizer.id !== userId) {
+      throw new ForbiddenException('Вы не можете удалить чужое мероприятие');
+    }
+
+    await this.eventsRepository.remove(event);
   }
 }

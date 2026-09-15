@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -48,5 +49,11 @@ export class EventsController {
   @Get()
   async findAll(@Query() query: GetEventQueryDto) {
     return this.eventsService.findAll(query);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  remove(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.eventsService.remove(id, request.user.id);
   }
 }
