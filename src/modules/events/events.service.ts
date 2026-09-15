@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -23,22 +27,43 @@ export class EventsService {
   }
 
   async findAll(query: GetEventQueryDto): Promise<Event[]> {
-    const { categoryId, search } = query
+    const { categoryId, search } = query;
+
     const queryBilder = this.eventsRepository
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.category', 'category')
-      .leftJoinAndSelect('event.organizer', 'organizer')
+      .leftJoinAndSelect('event.organizer', 'organizer');
 
-    if(categoryId) {
-      queryBilder.andWhere('category.id = :categoryId', { categoryId })
+    if (categoryId) {
+      queryBilder.andWhere('category.id = :categoryId', { categoryId });
     }
 
     if (search) {
       queryBilder.andWhere('event.title ILike :search', {
-        search: `%${search}%`
-      })
+        search: `%${search}%`,
+      });
     }
 
-    return queryBilder.getMany()
+    return queryBilder.getMany();
   }
+
+  async remove(id: string, userId: string): Promise<void> {
+  const event = await this.eventsRepository
+    .createQueryBuilder('event')
+    .leftJoinAndSelect('event.organizer', 'organizer')
+    .where('event.id = :id', { id })
+    .getOne();
+
+  if (!event) {
+    throw new NotFoundException('Мероприятие не найдено');
+  }
+
+  if (event.organizer.id !== userId) {
+    throw new ForbiddenException(
+      'Вы не можете удалить чужое мероприятие',
+    );
+  }
+
+  await this.eventsRepository.remove(event);
+}
 }

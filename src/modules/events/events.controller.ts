@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -6,7 +16,7 @@ import { EventsService } from './events.service';
 import { GetEventQueryDto } from './dto/get-event.dto';
 
 interface AuthenticatedRequest extends Request {
-  user: {
+    user: {
     id: string;
   };
 }
@@ -18,8 +28,8 @@ export class EventsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   create(
-    @Body() createEventDto: CreateEventDto,
-    @Req() request: AuthenticatedRequest,
+  @Body() createEventDto: CreateEventDto,
+  @Req() request: AuthenticatedRequest,
   ) {
     return this.eventsService.create(createEventDto, request.user.id);
   }
@@ -28,4 +38,12 @@ export class EventsController {
   async findAll(@Query() query: GetEventQueryDto) {
     return this.eventsService.findAll(query)
   }
+  @Delete(':id')
+@UseGuards(JwtAuthGuard)
+remove(
+  @Param('id') id: string,
+  @Req() request: AuthenticatedRequest,
+) {
+  return this.eventsService.remove(id, request.user.id);
+}
 }
