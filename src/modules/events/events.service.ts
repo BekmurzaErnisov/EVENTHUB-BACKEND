@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -48,22 +49,30 @@ export class EventsService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-  const event = await this.eventsRepository
-    .createQueryBuilder('event')
-    .leftJoinAndSelect('event.organizer', 'organizer')
-    .where('event.id = :id', { id })
-    .getOne();
+    const event = await this.eventsRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.organizer', 'organizer')
+      .where('event.id = :id', { id })
+      .getOne();
 
-  if (!event) {
-    throw new NotFoundException('Мероприятие не найдено');
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
+    }
+
+    if (event.organizer.id !== userId) {
+      throw new ForbiddenException('Вы не можете удалить чужое мероприятие');
+    }
+
+    await this.eventsRepository.remove(event);
   }
 
-  if (event.organizer.id !== userId) {
-    throw new ForbiddenException(
-      'Вы не можете удалить чужое мероприятие',
-    );
-  }
+  handleImageUpload(file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Файл не был передан')
+    }
 
-  await this.eventsRepository.remove(event);
-}
+    return {
+      imageUrl: `/uploads/${file.fieldname}`
+    }
+  }
 }
