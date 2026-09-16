@@ -34,8 +34,4 @@ export class CreateEventDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
-
-  @IsUUID('4', { message: 'Некорректный формат ID категории' })
-  @IsNotEmpty({ message: 'Категория обязательна' })
-  categoryId!: string;
 }
