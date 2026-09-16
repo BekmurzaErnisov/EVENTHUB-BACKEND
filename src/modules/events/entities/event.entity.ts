@@ -31,5 +31,5 @@ export class Event {
 
   @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'categoryId' })
-  category: Category;
+  category!: Category;
 }
