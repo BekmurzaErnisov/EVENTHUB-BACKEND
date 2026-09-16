@@ -8,6 +8,7 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
+import { IsFutureDate } from '../validators/is-future-date.validator';
 
 export class CreateEventDto {
   @IsString({ message: 'Название должно быть строкой' })
@@ -19,6 +20,7 @@ export class CreateEventDto {
   description!: string;
 
   @IsDateString({}, { message: 'Некорректный формат даты' })
+  @IsFutureDate({ message: 'Дата мероприятия не может быть в прошлом' })
   @IsNotEmpty({ message: 'Дата обязательна' })
   date!: string;
 
