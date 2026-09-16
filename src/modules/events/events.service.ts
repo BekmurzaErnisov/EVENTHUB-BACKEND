@@ -81,6 +81,32 @@ export class EventsService {
     return queryBuilder.getMany();
   }
 
+  async findOne(id: string): Promise<Event> {
+    const event = await this.eventsRepository.findOne({
+      where: { id },
+      relations: {
+        category: true,
+        organizer: true
+      }
+    })
+
+    if(!event) {
+      throw new NotFoundException('Мероприятие не найдено')
+    }
+
+    return event
+  }
+
+  async findByOrganizer(organizerId: string): Promise<Event[]> {
+    return this.eventsRepository.find({
+      where: { organizer: { id: organizerId } },
+      relations: {
+        category: true,
+      },
+      order: { createdAt: 'DESC'}
+    })
+  }
+
   async remove(id: string, userId: string): Promise<void> {
     const event = await this.eventsRepository
       .createQueryBuilder('event')
@@ -96,7 +122,7 @@ export class EventsService {
       throw new ForbiddenException('Вы не можете удалить чужое мероприятие');
     }
 
-    await this.eventsRepository.remove(event);
+    await this.eventsRepository.softRemove(event);
   }
 
   handleImageUpload(file?: Express.Multer.File) {
@@ -105,7 +131,8 @@ export class EventsService {
     }
 
     return {
-      imageUrl: `/uploads/${file.fieldname}`
+      imageUrl: `/uploads/${file.filename}`
     }
   }
+
 }
