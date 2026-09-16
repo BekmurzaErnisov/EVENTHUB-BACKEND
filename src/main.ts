@@ -1,9 +1,10 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as express from 'express'
+import { NestFactory, Reflector } from '@nestjs/core';
+import * as express from 'express';
 import { join } from 'path';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exctption.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,7 +19,11 @@ async function bootstrap() {
     }),
   );
 
-  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')))
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
   const configService = app.get(ConfigService);
   const PORT = configService.get<number>('PORT') || 3000;
