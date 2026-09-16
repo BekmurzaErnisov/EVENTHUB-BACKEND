@@ -1,13 +1,4 @@
-import {
-  IsDateString,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import {IsDateString,IsInt,IsNotEmpty,IsOptional,IsString,IsUUID,} from 'class-validator';
 
 export class CreateEventDto {
   @IsString({ message: 'Название должно быть строкой' })
@@ -24,8 +15,8 @@ export class CreateEventDto {
 
   @IsString({ message: 'Адрес должен быть строкой' })
   @IsNotEmpty({ message: 'Адрес обязателен' })
-  location: string;
-
+  location: string; 
+  
   @IsNumber({}, { message: 'Цена должна быть числом' })
   @Min(0, { message: 'Цена не может быть отрицательной' })
   price: number;
@@ -33,6 +24,10 @@ export class CreateEventDto {
   @IsInt({ message: 'Количество мест должно быть целым числом' })
   @Min(1, { message: 'Количество мест должно быть больше 0' })
   capacity: number;
+
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 
   @IsOptional()
   @IsString()
