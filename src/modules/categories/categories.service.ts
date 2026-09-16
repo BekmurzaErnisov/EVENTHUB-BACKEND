@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -23,12 +23,23 @@ export class CategoriesService implements OnModuleInit {
       const category = await this.categoriesRepository.findOneBy({ name });
 
       if (!category) {
-        await this.categoriesRepository.save({ name });
+        const newCategory = this.categoriesRepository.create({ name })
+        await this.categoriesRepository.save(newCategory);
       }
     }
   }
 
   findAll(): Promise<Category[]> {
     return this.categoriesRepository.find({ order: { name: 'ASC' } });
+  }
+
+  async findOne(id: number): Promise<Category> {
+    const category = await this.categoriesRepository.findOneBy({ id })
+
+    if(!category) {
+      throw new NotFoundException('Категории не найдена')
+    }
+
+    return category
   }
 }
