@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -96,5 +97,15 @@ export class EventsService {
     }
 
     await this.eventsRepository.remove(event);
+  }
+
+  handleImageUpload(file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Файл не был передан')
+    }
+
+    return {
+      imageUrl: `/uploads/${file.fieldname}`
+    }
   }
 }

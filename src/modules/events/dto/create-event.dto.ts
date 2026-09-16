@@ -25,4 +25,8 @@ export class CreateEventDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl: string
 }
