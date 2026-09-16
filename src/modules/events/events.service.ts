@@ -11,6 +11,10 @@ import { Event } from './entities/event.entity';
 import { GetEventQueryDto } from './dto/get-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
+interface UploadedEventFile {
+  filename: string;
+}
+
 @Injectable()
 export class EventsService {
   constructor(
@@ -86,15 +90,15 @@ export class EventsService {
       where: { id },
       relations: {
         category: true,
-        organizer: true
-      }
-    })
+        organizer: true,
+      },
+    });
 
-    if(!event) {
-      throw new NotFoundException('Мероприятие не найдено')
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
     }
 
-    return event
+    return event;
   }
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
@@ -103,8 +107,8 @@ export class EventsService {
       relations: {
         category: true,
       },
-      order: { createdAt: 'DESC'}
-    })
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -125,14 +129,13 @@ export class EventsService {
     await this.eventsRepository.softRemove(event);
   }
 
-  handleImageUpload(file?: Express.Multer.File) {
+  handleImageUpload(file?: UploadedEventFile) {
     if (!file) {
-      throw new BadRequestException('Файл не был передан')
+      throw new BadRequestException('Файл не был передан');
     }
 
     return {
-      imageUrl: `/uploads/${file.filename}`
-    }
+      imageUrl: `/uploads/${file.filename}`,
+    };
   }
-
 }

@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -19,9 +24,7 @@ export class UsersService {
       where: { email: dto.email },
     });
     if (existingUser) {
-      throw new ConflictException(
-        'Пользователь с таким email уже существует',
-      );
+      throw new ConflictException('Пользователь с таким email уже существует');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -34,8 +37,6 @@ export class UsersService {
 
     const savedUser = await this.userRepository.save(user);
 
-    const { passwordHash: _, ...result } = savedUser
-    
     return savedUser;
   }
 
@@ -46,6 +47,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        role: true,
         passwordHash: true,
       },
     });
@@ -53,67 +55,67 @@ export class UsersService {
 
   async getProfile(userId: string) {
     const user = await this.userRepository.findOne({
-      where: { id: userId }
-    })
-    if(!user) {
-      throw new NotFoundException('Пользователь не найден')
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
     }
 
-    return user
+    return user;
   }
 
   async updateProfile(userId: string, dto: UpdateUserDto) {
-    const user = await this.getProfile(userId)
+    const user = await this.getProfile(userId);
 
     if (dto.email && dto.email !== user.email) {
       const existingUser = await this.userRepository.findOne({
-        where: { email: dto.email }
-      })
+        where: { email: dto.email },
+      });
 
-      if(existingUser) {
-        throw new ConflictException('Этот email уже используется')
+      if (existingUser) {
+        throw new ConflictException('Этот email уже используется');
       }
 
-      user.email = dto.email
+      user.email = dto.email;
     }
 
     if (dto.name) {
-      user.name = dto.name
+      user.name = dto.name;
     }
 
-    return this.userRepository.save(user)
+    return this.userRepository.save(user);
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: { id: true, passwordHash: true }
-    })
+      select: { id: true, passwordHash: true },
+    });
 
-    if(!user) {
-      throw new NotFoundException('Пользователь не найден')
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
     }
 
     const isOldPasswordValid = await bcrypt.compare(
       dto.oldPassword,
-      user.passwordHash
-    )
+      user.passwordHash,
+    );
 
-    if(!isOldPasswordValid) {
-      throw new BadRequestException('Неверный старый пароль')
+    if (!isOldPasswordValid) {
+      throw new BadRequestException('Неверный старый пароль');
     }
 
-    user.passwordHash = await bcrypt.hash(dto.newPassword, 10)
-    await this.userRepository.save(user)
+    user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepository.save(user);
 
-    return { message: 'Пароль успешно изменен' }
+    return { message: 'Пароль успешно изменен' };
   }
 
   async removeAccount(userId: string) {
-    const user = await this.getProfile(userId)
+    const user = await this.getProfile(userId);
 
-    await this.userRepository.softRemove(user)
+    await this.userRepository.softRemove(user);
 
-    return { message: 'Аккаунти успешно удален' }
+    return { message: 'Аккаунти успешно удален' };
   }
 }

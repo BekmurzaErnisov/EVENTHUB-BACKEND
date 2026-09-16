@@ -1,33 +1,38 @@
-import {IsDateString,IsInt,IsNotEmpty,IsOptional,IsString,IsUUID,} from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class CreateEventDto {
   @IsString({ message: 'Название должно быть строкой' })
   @IsNotEmpty({ message: 'Название обязательно' })
-  title: string;
+  title!: string;
 
   @IsString({ message: 'Описание должно быть строкой' })
   @IsNotEmpty({ message: 'Описание обязательно' })
-  description: string;
+  description!: string;
 
   @IsDateString({}, { message: 'Некорректный формат даты' })
   @IsNotEmpty({ message: 'Дата обязательна' })
-  date: string;
+  date!: string;
 
   @IsString({ message: 'Адрес должен быть строкой' })
   @IsNotEmpty({ message: 'Адрес обязателен' })
-  location: string; 
-  
+  location!: string;
+
   @IsNumber({}, { message: 'Цена должна быть числом' })
   @Min(0, { message: 'Цена не может быть отрицательной' })
-  price: number;
+  price!: number;
 
   @IsInt({ message: 'Количество мест должно быть целым числом' })
   @Min(1, { message: 'Количество мест должно быть больше 0' })
-  capacity: number;
-
-  @IsOptional()
-  @IsUUID()
-  categoryId?: string;
+  capacity!: number;
 
   @IsOptional()
   @IsString()
@@ -35,5 +40,5 @@ export class CreateEventDto {
 
   @IsUUID('4', { message: 'Некорректный формат ID категории' })
   @IsNotEmpty({ message: 'Категория обязательна' })
-  categoryId: string;
+  categoryId!: string;
 }

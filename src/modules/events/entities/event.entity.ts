@@ -1,4 +1,13 @@
-import {Column,Entity,JoinColumn, ManyToOne, PrimaryGeneratedColumn,} from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Category } from 'src/modules/categories/entities/category.entity';
 
@@ -19,21 +28,18 @@ export class Event {
   @Column()
   location!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
-  price!: number
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price!: number;
 
   @Column({ type: 'int', default: 0 })
-  capacity!: number
+  capacity!: number;
 
-    @Column({ nullable: true })
-  imageUrl?: string
+  @Column({ nullable: true })
+  imageUrl?: string;
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organizerId' })
   organizer!: User;
-
-  @Column()
-  capacity!: number;
 
   @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'categoryId' })
@@ -46,5 +52,5 @@ export class Event {
   updatedAt!: Date;
 
   @DeleteDateColumn()
-  deletadAt!: Date
+  deletadAt!: Date;
 }

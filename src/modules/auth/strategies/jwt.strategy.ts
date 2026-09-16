@@ -7,6 +7,7 @@ import { UsersService } from 'src/modules/users/users.service';
 export interface JwtPayload {
   sub: string;
   email: string;
+  role?: 'user' | 'admin';
 }
 
 @Injectable()
@@ -19,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey:
-      configService.get<string>('JWT_SECRET') || 'development-secret',
+        configService.get<string>('JWT_SECRET') || 'development-secret',
     });
   }
 
@@ -28,6 +29,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('Пользователь не найден');
     }
-    return { id: user.id, email: user.email, name: user.name };
+    return { id: user.id, email: user.email, name: user.name, role: user.role };
   }
 }

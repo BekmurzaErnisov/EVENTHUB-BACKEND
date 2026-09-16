@@ -7,6 +7,7 @@ import { LoginDto } from './dto/login.dto';
 export interface JwtPayload {
   sub: string;
   email?: string;
+  role?: 'user' | 'admin';
 }
 
 @Injectable()
@@ -27,8 +28,7 @@ export class AuthService {
       throw new UnauthorizedException('Неверный email или пароль');
     }
 
-    const { passwordHash, ...result } = user;
-    return result;
+    return user;
   }
 
   async login(loginDto: LoginDto) {
@@ -37,6 +37,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
+      role: user.role,
     };
 
     return {
@@ -45,5 +46,3 @@ export class AuthService {
     };
   }
 }
-
-

@@ -10,5 +10,5 @@ export class Category {
   name!: string;
 
   @OneToMany(() => Event, (event) => event.category)
-  event!: Event[]
+  event!: Event[];
 }
