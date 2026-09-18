@@ -9,4 +9,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEmail({}, { message: 'Некорректный формат email' })
   email: string;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 }
