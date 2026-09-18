@@ -23,6 +23,9 @@ export class User {
   @Column({ select: false })
   passwordHash: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  refreshTokenHash: string | null
+
   @CreateDateColumn()
   cratedAt: Date;
 
