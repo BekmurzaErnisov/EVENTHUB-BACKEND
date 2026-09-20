@@ -13,14 +13,14 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  name: string;
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
 
   @Column({ unique: true })
   email: string;
 
   @Exclude()
-  @Column({ select: false })
+  @Column({ select: false, default: '' })
   passwordHash: string;
 
   @Column({ type: 'varchar', nullable: true })
