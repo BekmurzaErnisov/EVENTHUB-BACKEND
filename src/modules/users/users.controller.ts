@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import type { RequestWithUser } from 'src/common/interfaces/requset-with-user.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from 'src/config/multer.config';
 
 @Controller('users')
 export class UsersController {
@@ -38,6 +40,21 @@ export class UsersController {
   async removeAccount(@Req() req: RequestWithUser) {
     return this.usersService.removeAccount(req.user.id)
   }
-  
+
+  @UseGuards(JwtAuthGuard)
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file', multerOptions))
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    return this.usersService.updateAvatar(req.user.id, file);
+  }
+
+  @Delete('avatar')
+  @UseGuards(JwtAuthGuard)
+  async deleateAvatar(@Req() req) {
+    return this.usersService.deleteAvatar(req.user.id)
+  }
 
 }

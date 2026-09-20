@@ -150,4 +150,30 @@ export class UsersService {
 
     return { message: 'Аккаунти успешно удален' };
   }
+
+  async updateAvatar(userId: string, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Файл аватара не передан');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    user.avatarUrl = `/uploads/${file.filename}`;
+    await this.userRepository.save(user);
+
+    return {
+      avatarUrl: user.avatarUrl,
+    };
+  }
+
+  async deleteAvatar(userId: string) {
+  const user = await this.userRepository.findOne({ where: { id: userId } });
+  if (!user) throw new NotFoundException('Пользователь не найден');
+
+  user.avatarUrl = null;
+  return this.userRepository.save(user);
+}
 }

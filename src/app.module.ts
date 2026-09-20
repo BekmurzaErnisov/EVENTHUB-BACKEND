@@ -8,9 +8,15 @@ import { RegistrationsModule } from './modules/registrations/registrations.modul
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { typeOrmConfig } from './config/db.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [typeOrmConfig],

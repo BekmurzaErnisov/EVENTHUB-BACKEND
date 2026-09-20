@@ -28,8 +28,8 @@ export class CreateEventDto {
   capacity!: number;
 
   @IsOptional()
-  @IsUUID()
-  categoryId?: string;
+  @IsNumber()
+  categoryId?: number
 
   @IsOptional()
   @IsString()

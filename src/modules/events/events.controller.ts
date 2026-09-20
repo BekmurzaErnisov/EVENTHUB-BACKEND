@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -21,12 +20,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { GetEventQueryDto } from './dto/get-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventsService } from './events.service';
-
-interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-  };
-}
+import { OptionalJwtAuthGuard } from 'src/common/guards/optional-auth.guard';
 
 @Controller('events')
 export class EventsController {
@@ -36,7 +30,7 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   create(
     @Body() createEventDto: CreateEventDto,
-    @Req() request: AuthenticatedRequest,
+    @Req() request: RequestWithUser,
   ) {
     return this.eventsService.create(createEventDto, request.user.id);
   }
@@ -49,34 +43,36 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Get('my')
   findMyEvents(@Req() req: RequestWithUser) {
-    return this.eventsService.findByOrganizer(req.user.id)
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.eventsService.findOne(id)
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateEventDto: UpdateEventDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.eventsService.update(id, updateEventDto, request.user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id', )
-  remove(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
-    return this.eventsService.remove(id, request.user.id);
+    return this.eventsService.findByOrganizer(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', multerOptions))
   uploadImage(@UploadedFile() file: Express.Multer.File) {
-    return this.eventsService.handleImageUpload(file)
+    return this.eventsService.handleImageUpload(file);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.eventsService.findOne(id, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.update(id, updateEventDto, request.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string, @Req() request: RequestWithUser) {
+    return this.eventsService.remove(id, request.user.id);
   }
 }

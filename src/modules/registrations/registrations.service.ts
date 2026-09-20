@@ -56,4 +56,35 @@ export class RegistrationsService {
 
     return this.registrationsRepository.save(registration);
   }
+
+  async findUserRegistrations(userId: string) {
+  const registrations = await this.registrationsRepository.find({
+    where: { user: { id: userId } },
+    relations: {
+      event: {
+        category: true,
+        organizer: true,
+      }
+    },
+  });
+
+  return registrations.map((registration) => registration.event);
+}
+
+  async unregister(eventId: string, userId: string) {
+    const registration = await this.registrationsRepository.findOne({
+      where: {
+        event: { id: eventId },
+        user: { id: userId },
+      },
+    });
+
+    if (!registration) {
+      throw new NotFoundException('Вы не были записаны на это мероприятие');
+    }
+
+    await this.registrationsRepository.remove(registration);
+
+    return { message: 'Запись на мероприятие успешно отменена' };
+  }
 }
