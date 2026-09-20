@@ -60,13 +60,14 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async findAll(query: GetEventQueryDto): Promise<Event[]> {
+  async findAll(query: GetEventQueryDto): Promise<any[]> {
     const { categoryId, search } = query;
 
     const queryBuilder = this.eventsRepository
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.category', 'category')
-      .leftJoinAndSelect('event.organizer', 'organizer');
+      .leftJoinAndSelect('event.organizer', 'organizer')
+      .leftJoinAndSelect('event.registrations', 'registrations');
 
     if (categoryId) {
       queryBuilder.andWhere('category.id = :categoryId', { categoryId });
@@ -78,34 +79,51 @@ export class EventsService {
       });
     }
 
-    return queryBuilder.getMany();
+    const events = await queryBuilder.getMany();
+
+    return events.map((event) => {
+      const registeredCount = event.registrations ? event.registrations.length : 0;
+      const availableSeats = Math.max(0, event.capacity - registeredCount);
+      const { registrations, ...eventData } = event;
+
+      return {
+        ...eventData,
+        registeredCount,
+        availableSeats,
+      };
+    });
   }
 
   async findOne(id: string, userId?: string) {
-  const event = await this.eventsRepository.findOne({
-    where: { id },
-    relations: {
-      category: true,
-      organizer: true,
-      registrations: true,
-    },
-  });
+    const event = await this.eventsRepository.findOne({
+      where: { id },
+      relations: {
+        category: true,
+        organizer: true,
+        registrations: true,
+      },
+    });
 
-  if (!event) {
-    throw new NotFoundException('Мероприятие не найдено');
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
+    }
+
+    const isJoined = userId && event.registrations
+      ? event.registrations.some((reg) => reg.userId === userId)
+      : false;
+
+    const registeredCount = event.registrations ? event.registrations.length : 0;
+    const availableSeats = Math.max(0, event.capacity - registeredCount);
+
+    const { registrations, ...eventData } = event;
+
+    return {
+      ...eventData,
+      registeredCount,
+      availableSeats,
+      isJoined,
+    };
   }
-
-  const isJoined = userId && event.registrations
-    ? event.registrations.some((reg) => reg.userId === userId)
-    : false;
-
-  const { registrations, ...eventData } = event;
-
-  return {
-    ...eventData,
-    isJoined,
-  };
-}
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
     return this.eventsRepository.find({
