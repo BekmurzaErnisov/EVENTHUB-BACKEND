@@ -40,7 +40,6 @@ export class CreateEventDto {
   @IsString()
   imageUrl?: string;
 
-  @IsTypeNumberOptional() // либо стандартная связка ниже:
   @IsOptional()
   @Type(() => Number)
   @IsNumber({}, { message: 'ID категории должен быть числом' })
