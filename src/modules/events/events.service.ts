@@ -81,21 +81,31 @@ export class EventsService {
     return queryBuilder.getMany();
   }
 
-  async findOne(id: string): Promise<Event> {
-    const event = await this.eventsRepository.findOne({
-      where: { id },
-      relations: {
-        category: true,
-        organizer: true
-      }
-    })
+  async findOne(id: string, userId?: string) {
+  const event = await this.eventsRepository.findOne({
+    where: { id },
+    relations: {
+      category: true,
+      organizer: true,
+      registrations: true,
+    },
+  });
 
-    if(!event) {
-      throw new NotFoundException('Мероприятие не найдено')
-    }
-
-    return event
+  if (!event) {
+    throw new NotFoundException('Мероприятие не найдено');
   }
+
+  const isJoined = userId && event.registrations
+    ? event.registrations.some((reg) => reg.userId === userId)
+    : false;
+
+  const { registrations, ...eventData } = event;
+
+  return {
+    ...eventData,
+    isJoined,
+  };
+}
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
     return this.eventsRepository.find({

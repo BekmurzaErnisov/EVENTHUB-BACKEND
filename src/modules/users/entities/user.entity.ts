@@ -26,6 +26,9 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   refreshTokenHash: string | null
 
+  @Column({ type: 'varchar', nullable: true })
+  avatarUrl: string | null
+
   @CreateDateColumn()
   cratedAt: Date;
 
