@@ -52,13 +52,17 @@ export class EventsService {
       );
     }
 
-    const { title, description, date, location } = updateEventDto;
+    const { title, description, date, location, price, capacity, imageUrl, image } = updateEventDto as any;
 
     Object.assign(event, {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
       ...(date !== undefined && { date: new Date(date) }),
       ...(location !== undefined && { location }),
+      ...(price !== undefined && { price }),
+      ...(capacity !== undefined && { capacity }),
+      ...(imageUrl !== undefined && { imageUrl }),
+      ...(image !== undefined && { image }),
     });
 
     return this.eventsRepository.save(event);
@@ -85,12 +89,13 @@ export class EventsService {
     return queryBuilder.getMany();
   }
 
-  async findOne(id: string): Promise<Event> {
+  async findOne(id: string, userId?: string) {
     const event = await this.eventsRepository.findOne({
       where: { id },
       relations: {
         category: true,
         organizer: true,
+        registrations: true,
       },
     });
 
@@ -98,7 +103,16 @@ export class EventsService {
       throw new NotFoundException('Мероприятие не найдено');
     }
 
-    return event;
+    const isJoined = userId && event.registrations
+      ? event.registrations.some((reg) => reg.userId === userId)
+      : false;
+
+    const { registrations, ...eventData } = event;
+
+    return {
+      ...eventData,
+      isJoined,
+    };
   }
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {

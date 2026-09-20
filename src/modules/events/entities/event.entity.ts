@@ -1,6 +1,7 @@
-import {Column,CreateDateColumn,DeleteDateColumn,Entity,JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn,} from 'typeorm';
+import {Column,CreateDateColumn,DeleteDateColumn,Entity,JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn,} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Category } from 'src/modules/categories/entities/category.entity';
+import { Registration } from 'src/modules/registrations/entities/registration.entity';
 
 @Entity('events')
 export class Event {
@@ -35,6 +36,9 @@ export class Event {
   @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'categoryId' })
   category!: Category;
+
+  @OneToMany(() => Registration, (registration) => registration.event)
+  registrations?: Registration[];
 
   @CreateDateColumn()
   createdAt!: Date;

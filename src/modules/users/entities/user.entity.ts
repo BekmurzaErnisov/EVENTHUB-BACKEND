@@ -13,8 +13,8 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  name: string;
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
 
   @Column({ unique: true })
   email: string;
@@ -23,8 +23,14 @@ export class User {
   role: 'user' | 'admin';
 
   @Exclude()
-  @Column({ select: false })
+  @Column({ select: false, default: '' })
   passwordHash: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  refreshTokenHash: string | null
+
+  @Column({ type: 'varchar', nullable: true })
+  avatarUrl: string | null
 
   @CreateDateColumn()
   cratedAt: Date;

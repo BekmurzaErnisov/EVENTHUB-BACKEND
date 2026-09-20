@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsInt,
@@ -5,7 +6,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Min,
 } from 'class-validator';
 import { IsFutureDate } from '../validators/is-future-date.validator';
@@ -40,7 +40,10 @@ export class CreateEventDto {
   @IsString()
   imageUrl?: string;
 
-  @IsUUID('4', { message: 'Некорректный формат ID категории' })
+  @IsTypeNumberOptional() // либо стандартная связка ниже:
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'ID категории должен быть числом' })
   @IsNotEmpty({ message: 'Категория обязательна' })
-  categoryId!: string;
+  categoryId!: number;
 }
