@@ -13,9 +13,11 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { RequestWithUser } from 'src/common/interfaces/requset-with-user.interface';
 import { multerOptions } from 'src/config/multer.config';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateEventDto } from './dto/create-event.dto';
 import { GetEventQueryDto } from './dto/get-event.dto';
@@ -28,6 +30,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+@ApiTags('Events')
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
@@ -40,7 +43,6 @@ export class EventsController {
   ) {
     return this.eventsService.create(createEventDto, request.user.id);
   }
-
   @Get()
   async findAll(@Query() query: GetEventQueryDto) {
     return this.eventsService.findAll(query);
@@ -49,12 +51,12 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Get('my')
   findMyEvents(@Req() req: RequestWithUser) {
-    return this.eventsService.findByOrganizer(req.user.id)
+    return this.eventsService.findByOrganizer(req.user.id);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.eventsService.findOne(id)
+    return this.eventsService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -68,8 +70,11 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':id', )
-  remove(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
+  @Delete(':id')
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.eventsService.remove(id, request.user.id);
   }
 
@@ -77,6 +82,6 @@ export class EventsController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', multerOptions))
   uploadImage(@UploadedFile() file: Express.Multer.File) {
-    return this.eventsService.handleImageUpload(file)
+    return this.eventsService.handleImageUpload(file);
   }
 }

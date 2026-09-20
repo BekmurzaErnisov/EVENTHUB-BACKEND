@@ -1,5 +1,6 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory, Reflector } from '@nestjs/core';
 import * as express from 'express';
 import { join } from 'path';
@@ -8,6 +9,14 @@ import { HttpExceptionFilter } from './common/filters/http-exctption.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = new DocumentBuilder()
+  .setTitle('EventHub API')
+  .setDescription('API для сервиса мероприятий EventHub')
+  .setVersion('1.0')
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api', app, document);
 
   app.enableCors();
 
