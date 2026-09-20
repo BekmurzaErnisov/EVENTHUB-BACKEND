@@ -11,6 +11,10 @@ import { Event } from './entities/event.entity';
 import { GetEventQueryDto } from './dto/get-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
+interface UploadedEventFile {
+  filename: string;
+}
+
 @Injectable()
 export class EventsService {
   constructor(
@@ -86,30 +90,30 @@ export class EventsService {
   }
 
   async findOne(id: string, userId?: string) {
-  const event = await this.eventsRepository.findOne({
-    where: { id },
-    relations: {
-      category: true,
-      organizer: true,
-      registrations: true,
-    },
-  });
+    const event = await this.eventsRepository.findOne({
+      where: { id },
+      relations: {
+        category: true,
+        organizer: true,
+        registrations: true,
+      },
+    });
 
-  if (!event) {
-    throw new NotFoundException('Мероприятие не найдено');
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
+    }
+
+    const isJoined = userId && event.registrations
+      ? event.registrations.some((reg) => reg.userId === userId)
+      : false;
+
+    const { registrations, ...eventData } = event;
+
+    return {
+      ...eventData,
+      isJoined,
+    };
   }
-
-  const isJoined = userId && event.registrations
-    ? event.registrations.some((reg) => reg.userId === userId)
-    : false;
-
-  const { registrations, ...eventData } = event;
-
-  return {
-    ...eventData,
-    isJoined,
-  };
-}
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
     return this.eventsRepository.find({
@@ -117,8 +121,8 @@ export class EventsService {
       relations: {
         category: true,
       },
-      order: { createdAt: 'DESC'}
-    })
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -139,14 +143,13 @@ export class EventsService {
     await this.eventsRepository.softRemove(event);
   }
 
-  handleImageUpload(file?: Express.Multer.File) {
+  handleImageUpload(file?: UploadedEventFile) {
     if (!file) {
-      throw new BadRequestException('Файл не был передан')
+      throw new BadRequestException('Файл не был передан');
     }
 
     return {
-      imageUrl: `/uploads/${file.filename}`
-    }
+      imageUrl: `/uploads/${file.filename}`,
+    };
   }
-
 }
