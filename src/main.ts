@@ -1,8 +1,11 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestFactory, Reflector } from '@nestjs/core';
+import * as express from 'express';
+import { join } from 'path';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exctption.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,19 +18,25 @@ async function bootstrap() {
 const document = SwaggerModule.createDocument(app, config);
 SwaggerModule.setup('api', app, document);
 
-  app.enableCors()
+  app.enableCors();
 
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    })
-  )
+    }),
+  );
 
-  const configService = app.get(ConfigService)
-  const PORT = configService.get<number>('PORT') || 3000
-  await app.listen(PORT)
-  console.log(`Сервер запущен на порту ${PORT}`)
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
+
+  const configService = app.get(ConfigService);
+  const PORT = configService.get<number>('PORT') || 3000;
+  await app.listen(PORT);
+  console.log(`Сервер запущен на порту ${PORT}`);
 }
 bootstrap();

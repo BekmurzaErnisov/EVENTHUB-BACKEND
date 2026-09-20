@@ -1,8 +1,8 @@
-import { registerAs } from "@nestjs/config";
-import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { registerAs } from '@nestjs/config';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export const typeOrmConfig = registerAs(
-  ('database'),
+  'database',
   (): TypeOrmModuleOptions => ({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
@@ -12,5 +12,5 @@ export const typeOrmConfig = registerAs(
     database: process.env.DB_DATABASE || 'postgres',
     autoLoadEntities: true,
     synchronize: true,
-  })
-)
+  }),
+);

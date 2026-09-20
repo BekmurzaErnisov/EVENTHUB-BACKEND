@@ -1,22 +1,37 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Exclude } from 'class-transformer';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-@Entity('users') 
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string
+  id: string;
 
   @Column()
-  name: string
+  name: string;
 
   @Column({ unique: true })
-  email: string
+  email: string;
 
-  @Column()
-  passwordHash: string
+  @Exclude()
+  @Column({ select: false })
+  passwordHash: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  refreshTokenHash: string | null
 
   @CreateDateColumn()
-  cratedAt: Date
+  cratedAt: Date;
 
   @UpdateDateColumn()
-  updateAt: Date
+  updateAt: Date;
+
+  @DeleteDateColumn()
+  delatedAt: Date;
 }
