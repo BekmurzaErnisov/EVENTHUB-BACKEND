@@ -1,4 +1,5 @@
-import {IsDateString,IsInt, IsNotEmpty,IsNumber,IsOptional, IsString,IsUUID,Min,} from 'class-validator';
+import { Type } from 'class-transformer';
+import {IsDateString,IsInt, IsNotEmpty,IsNumber,IsOptional, IsString,Min,} from 'class-validator';
 import { IsFutureDate } from '../validators/is-future-date.validator';
 
 export class CreateEventDto {
@@ -17,7 +18,7 @@ export class CreateEventDto {
 
   @IsString({ message: 'Адрес должен быть строкой' })
   @IsNotEmpty({ message: 'Адрес обязателен' })
-  location: string; 
+  location!: string; 
   
   @IsNumber({}, { message: 'Цена должна быть числом' })
   @Min(0, { message: 'Цена не может быть отрицательной' })
@@ -28,8 +29,9 @@ export class CreateEventDto {
   capacity!: number;
 
   @IsOptional()
-  @IsNumber()
-  categoryId?: number
+  @Type(() => Number)
+  @IsNumber({}, { message: 'ID категории должен быть числом' })
+  categoryId?: number;
 
   @IsOptional()
   @IsString()
