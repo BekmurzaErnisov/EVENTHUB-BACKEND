@@ -9,10 +9,12 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { RequestWithUser } from 'src/common/interfaces/requset-with-user.interface';
@@ -42,8 +44,12 @@ export class EventsController {
 
   @ApiOperation({ summary: 'Получение списка мероприятий с фильтрацией' })
   @Get()
-  async findAll(@Query() query: GetEventQueryDto) {
-    return this.eventsService.findAll(query);
+  async findAll(@Query() query: GetEventQueryDto, @Res({ passthrough: true }) response: Response) {
+    const result = await this.eventsService.findAll(query);
+    response.setHeader('X-Total-Count', result.total);
+    response.setHeader('X-Page', result.page);
+    response.setHeader('X-Has-More', String(result.hasMore));
+    return result.events;
   }
 
   @ApiBearerAuth()

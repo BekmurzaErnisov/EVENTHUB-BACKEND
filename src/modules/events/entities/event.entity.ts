@@ -40,6 +40,8 @@ export class Event {
   @OneToMany(() => Registration, (registration) => registration.event)
   registrations?: Registration[];
 
+  registeredCount?: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 
