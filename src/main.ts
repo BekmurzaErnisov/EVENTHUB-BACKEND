@@ -18,7 +18,9 @@ async function bootstrap() {
 const document = SwaggerModule.createDocument(app, config);
 SwaggerModule.setup('api', app, document);
 
-  app.enableCors();
+  app.enableCors({
+    exposedHeaders: ['X-Total-Count', 'X-Page', 'X-Has-More'],
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

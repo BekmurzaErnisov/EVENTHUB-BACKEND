@@ -10,6 +10,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { Event } from './entities/event.entity';
 import { GetEventQueryDto } from './dto/get-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Category } from '../categories/entities/category.entity';
+import { Registration } from '../registrations/entities/registration.entity';
 
 interface UploadedEventFile {
   filename: string;
@@ -20,13 +22,27 @@ export class EventsService {
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
+    @InjectRepository(Category)
+    private readonly categoriesRepository: Repository<Category>,
+    @InjectRepository(Registration)
+    private readonly registrationsRepository: Repository<Registration>,
   ) {}
 
-  create(createEventDto: CreateEventDto, organizerId: string): Promise<Event> {
+  async create(createEventDto: CreateEventDto, organizerId: string): Promise<Event> {
+    const { categoryId, ...eventData } = createEventDto;
+    const category = categoryId
+      ? await this.categoriesRepository.findOne({ where: { id: categoryId } })
+      : null;
+
+    if (categoryId && !category) {
+      throw new NotFoundException('Категория не найдена');
+    }
+
     const event = this.eventsRepository.create({
-      ...createEventDto,
+      ...eventData,
       date: new Date(createEventDto.date),
       organizer: { id: organizerId },
+      ...(category ? { category } : {}),
     });
 
     return this.eventsRepository.save(event);
@@ -52,7 +68,14 @@ export class EventsService {
       );
     }
 
-    const { title, description, date, location, price, capacity, imageUrl, image } = updateEventDto as any;
+    const { title, description, date, location, price, capacity, imageUrl, categoryId } = updateEventDto;
+    const category = categoryId
+      ? await this.categoriesRepository.findOne({ where: { id: categoryId } })
+      : undefined;
+
+    if (categoryId && !category) {
+      throw new NotFoundException('Категория не найдена');
+    }
 
     Object.assign(event, {
       ...(title !== undefined && { title }),
@@ -62,22 +85,26 @@ export class EventsService {
       ...(price !== undefined && { price }),
       ...(capacity !== undefined && { capacity }),
       ...(imageUrl !== undefined && { imageUrl }),
-      ...(image !== undefined && { image }),
+      ...(category !== undefined && { category }),
     });
 
     return this.eventsRepository.save(event);
   }
 
-  async findAll(query: GetEventQueryDto): Promise<Event[]> {
+  async findAll(query: GetEventQueryDto) {
     const { categoryId, search } = query;
+    const page = query.page || 1;
+    const limit = query.limit || 12;
 
     const queryBuilder = this.eventsRepository
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.category', 'category')
       .leftJoinAndSelect('event.organizer', 'organizer');
 
-    if (categoryId) {
-      queryBuilder.andWhere('category.id = :categoryId', { categoryId });
+    if (categoryId !== undefined) {
+      queryBuilder.andWhere('category.id = :categoryId', {
+        categoryId: Number(categoryId),
+      });
     }
 
     if (search) {
@@ -86,7 +113,28 @@ export class EventsService {
       });
     }
 
-    return queryBuilder.getMany();
+    const total = await queryBuilder.getCount();
+    const events = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      events: await Promise.all(events.map(async (event) => {
+        const registeredCount = await this.registrationsRepository.count({
+          where: { eventId: event.id },
+        });
+
+        return {
+          ...event,
+          registeredCount,
+          availableSeats: Math.max(0, event.capacity - registeredCount),
+        };
+      })),
+      total,
+      page,
+      hasMore: page * limit < total,
+    };
   }
 
   async findOne(id: string, userId?: string) {
@@ -107,6 +155,16 @@ export class EventsService {
       ? event.registrations.some((reg) => reg.userId === userId)
       : false;
 
+  const { registrations, ...eventData } = event;
+  const registeredCount = registrations?.length || 0;
+
+  return {
+    ...eventData,
+    registeredCount,
+    availableSeats: Math.max(0, event.capacity - registeredCount),
+    isJoined,
+  };
+}
     const { registrations, ...eventData } = event;
 
     return {
