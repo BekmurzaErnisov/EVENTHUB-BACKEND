@@ -20,14 +20,14 @@ export class Event {
   @Column()
   location!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
-  price!: number
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price!: number;
 
   @Column({ type: 'int', default: 0 })
-  capacity!: number
+  capacity!: number;
 
-    @Column({ nullable: true })
-  imageUrl?: string
+  @Column({ nullable: true })
+  imageUrl?: string;
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organizerId' })
@@ -49,5 +49,5 @@ export class Event {
   updatedAt!: Date;
 
   @DeleteDateColumn()
-  deletadAt!: Date
+  deletadAt!: Date;
 }

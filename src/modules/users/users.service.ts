@@ -45,7 +45,7 @@ export class UsersService {
       this.jwtService.signAsync(payload, { expiresIn: '7d' }),
     ]);
 
-    await this.updateRefreshToken(savedUser.id, refreshToken)
+    await this.updateRefreshToken(savedUser.id, refreshToken);
 
     return {
       access_token: accessToken,
@@ -65,6 +65,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        role: true,
         passwordHash: true,
       },
     });
@@ -148,7 +149,7 @@ export class UsersService {
 
     await this.userRepository.softRemove(user);
 
-    return { message: 'Аккаунти успешно удален' };
+    return { message: 'Аккаунт успешно удален' };
   }
 
   async updateAvatar(userId: string, file: Express.Multer.File) {
@@ -170,10 +171,10 @@ export class UsersService {
   }
 
   async deleteAvatar(userId: string) {
-  const user = await this.userRepository.findOne({ where: { id: userId } });
-  if (!user) throw new NotFoundException('Пользователь не найден');
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
 
-  user.avatarUrl = null;
-  return this.userRepository.save(user);
-}
+    user.avatarUrl = null;
+    return this.userRepository.save(user);
+  }
 }

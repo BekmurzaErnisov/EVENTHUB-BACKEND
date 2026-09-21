@@ -19,6 +19,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ default: 'user' })
+  role: 'user' | 'admin';
+
   @Exclude()
   @Column({ select: false, default: '' })
   passwordHash: string;
