@@ -26,6 +26,7 @@ export class User {
   @Column({ select: false, default: '' })
   passwordHash: string;
 
+  @Exclude()
   @Column({ type: 'varchar', nullable: true })
   refreshTokenHash: string | null
 

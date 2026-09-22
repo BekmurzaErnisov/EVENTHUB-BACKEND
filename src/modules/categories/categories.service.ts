@@ -1,18 +1,13 @@
 import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DEFAULT_CATEGORIES } from './categories.constants';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 
 @Injectable()
 export class CategoriesService implements OnModuleInit {
-  private readonly initialCategories = [
-    'Конференции',
-    'Концерты',
-    'Спорт',
-    'Образование',
-    'Другое',
-  ];
+  private readonly initialCategories = DEFAULT_CATEGORIES;
 
   constructor(
     @InjectRepository(Category)

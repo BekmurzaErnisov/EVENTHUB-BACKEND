@@ -73,12 +73,19 @@ export class AuthService {
       }
 
       return await this.generateTokens(user.id, user.email);
-    } catch (e) {
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
       throw new UnauthorizedException('Невалидный refresh token');
     }
   }
 
   async logout(userId: string) {
     await this.usersService.updateRefreshToken(userId, null);
+    return { message: 'Вы вышли из аккаунта' };
   }
 }

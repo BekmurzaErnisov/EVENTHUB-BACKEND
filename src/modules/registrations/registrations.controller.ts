@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Req,
   UseGuards,
@@ -30,6 +31,13 @@ interface AuthenticatedRequest extends Request {
 export class RegistrationsController {
   constructor(private readonly registrationsService: RegistrationsService) {}
 
+  @ApiOperation({ summary: 'Получение всех регистраций текущего пользователя' })
+  @Get('my/registrations')
+  @UseGuards(JwtAuthGuard)
+  findMyRegistrations(@Req() request: AuthenticatedRequest) {
+    return this.registrationsService.findUserRegistrations(request.user.id);
+  }
+
   @ApiOperation({ summary: 'Регистрация на мероприятие' })
   @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
   @ApiResponse({
@@ -43,7 +51,10 @@ export class RegistrationsController {
   @ApiResponse({ status: 404, description: 'Мероприятие не найдено' })
   @Post(':id/register')
   @UseGuards(JwtAuthGuard)
-  register(@Param('id') eventId: string, @Req() request: AuthenticatedRequest) {
+  register(
+    @Param('id', ParseUUIDPipe) eventId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
     return this.registrationsService.register(eventId, request.user.id);
   }
 
@@ -57,20 +68,9 @@ export class RegistrationsController {
   @Delete(':id/register')
   @UseGuards(JwtAuthGuard)
   unregister(
-    @Param('id') eventId: string,
+    @Param('id', ParseUUIDPipe) eventId: string,
     @Req() request: AuthenticatedRequest,
   ) {
     return this.registrationsService.unregister(eventId, request.user.id);
-  }
-
-  @ApiOperation({ summary: 'Получение всех регистраций текущего пользователя' })
-  @ApiResponse({
-    status: 200,
-    description: 'Список регистраций успешно получен',
-  })
-  @Get('my/registrations')
-  @UseGuards(JwtAuthGuard)
-  findMyRegistrations(@Req() request: AuthenticatedRequest) {
-    return this.registrationsService.findUserRegistrations(request.user.id);
   }
 }

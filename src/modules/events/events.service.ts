@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Express } from 'express';
 import { CreateEventDto } from './dto/create-event.dto';
 import { Event } from './entities/event.entity';
 import { GetEventQueryDto } from './dto/get-event.dto';
@@ -92,7 +93,7 @@ export class EventsService {
   }
 
   async findAll(query: GetEventQueryDto) {
-    const { categoryId, search } = query;
+    const { categoryId, search, sort } = query;
     const page = query.page || 1;
     const limit = query.limit || 12;
 
@@ -108,29 +109,57 @@ export class EventsService {
     }
 
     if (search) {
-      queryBuilder.andWhere('event.title ILike :search', {
-        search: `%${search}%`,
+      const safeSearch = search.replace(/[%_\\]/g, '\\$&');
+      queryBuilder.andWhere(`event.title ILIKE :search ESCAPE '\\'`, {
+        search: `%${safeSearch}%`,
       });
     }
 
-    const total = await queryBuilder.getCount();
+    switch (sort) {
+      case 'title':
+        queryBuilder.orderBy('event.title', 'ASC');
+        break;
+      case 'newest':
+        queryBuilder.orderBy('event.date', 'DESC');
+        break;
+      case 'added':
+        queryBuilder.orderBy('event.createdAt', 'DESC');
+        break;
+      case 'oldest':
+      case 'nearest':
+      default:
+        queryBuilder.orderBy('event.date', 'ASC');
+    }
+    queryBuilder.addOrderBy('event.id', 'ASC');
+
+    const total = await queryBuilder.clone().getCount();
     const events = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();
 
-    return {
-      events: await Promise.all(events.map(async (event) => {
-        const registeredCount = await this.registrationsRepository.count({
-          where: { eventId: event.id },
-        });
+    const ids = events.map((event) => event.id);
+    const counts = new Map<string, number>();
+    if (ids.length > 0) {
+      const rows = await this.registrationsRepository
+        .createQueryBuilder('registration')
+        .select('registration.eventId', 'eventId')
+        .addSelect('COUNT(*)', 'count')
+        .where('registration.eventId IN (:...ids)', { ids })
+        .groupBy('registration.eventId')
+        .getRawMany<{ eventId: string; count: string }>();
 
-        return {
-          ...event,
-          registeredCount,
-          availableSeats: Math.max(0, event.capacity - registeredCount),
-        };
-      })),
+      for (const row of rows) {
+        counts.set(row.eventId, Number(row.count));
+      }
+    }
+
+    for (const event of events) {
+      event.registeredCount = counts.get(event.id) ?? 0;
+    }
+
+    return {
+      events: events.map((event) => this.presentEvent(event)),
       total,
       page,
       hasMore: page * limit < total,
@@ -151,26 +180,11 @@ export class EventsService {
       throw new NotFoundException('Мероприятие не найдено');
     }
 
-    const isJoined = userId && event.registrations
-      ? event.registrations.some((reg) => reg.userId === userId)
-      : false;
+    const isJoined = Boolean(
+      userId && event.registrations?.some((reg) => reg.userId === userId),
+    );
 
-  const { registrations, ...eventData } = event;
-  const registeredCount = registrations?.length || 0;
-
-  return {
-    ...eventData,
-    registeredCount,
-    availableSeats: Math.max(0, event.capacity - registeredCount),
-    isJoined,
-  };
-}
-    const { registrations, ...eventData } = event;
-
-    return {
-      ...eventData,
-      isJoined,
-    };
+    return this.presentEvent(event, { isJoined });
   }
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
@@ -208,6 +222,25 @@ export class EventsService {
 
     return {
       imageUrl: `/uploads/${file.filename}`,
+    };
+  }
+
+  private presentEvent(event: Event, extra: Record<string, unknown> = {}) {
+    const { registrations, organizer, ...eventData } = event;
+    const registeredCount = event.registeredCount ?? registrations?.length ?? 0;
+
+    return {
+      ...eventData,
+      organizer: organizer
+        ? {
+            id: organizer.id,
+            name: organizer.name,
+            avatarUrl: organizer.avatarUrl,
+          }
+        : null,
+      registeredCount,
+      availableSeats: Math.max(0, Number(event.capacity) - registeredCount),
+      ...extra,
     };
   }
 }

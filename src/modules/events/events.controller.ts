@@ -15,7 +15,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -25,7 +24,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { RequestWithUser } from 'src/common/interfaces/requset-with-user.interface';
+import type { RequestWithUser } from 'src/common/interfaces/request-with-user.interface';
 import { multerOptions } from 'src/config/multer.config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/common/guards/optional-auth.guard';

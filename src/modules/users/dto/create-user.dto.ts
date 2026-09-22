@@ -1,6 +1,10 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail({}, { message: 'Некоректный формат email' })
   @IsNotEmpty({ message: 'Email обязятелен' })
   email: string;

@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
@@ -7,10 +8,9 @@ export class UpdateUserDto {
   name: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail({}, { message: 'Некорректный формат email' })
   email: string;
-
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
 }

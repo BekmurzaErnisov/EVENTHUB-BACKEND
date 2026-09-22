@@ -1,6 +1,11 @@
-import {ConflictException,Injectable, NotFoundException,} from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { Registration } from './entities/registration.entity';
 import { Event } from '../events/entities/event.entity';
@@ -11,65 +16,90 @@ export class RegistrationsService {
     @InjectRepository(Registration)
     private readonly registrationsRepository: Repository<Registration>,
 
-    @InjectRepository(Event)
-    private readonly eventsRepository: Repository<Event>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(eventId: string, userId: string) {
-    const event = await this.eventsRepository.findOne({
-      where: { id: eventId },
-    });
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const event = await manager
+          .createQueryBuilder(Event, 'event')
+          .setLock('pessimistic_write')
+          .where('event.id = :id', { id: eventId })
+          .getOne();
 
-    if (!event) {
-      throw new NotFoundException('Мероприятие не найдено');
-    }
+        if (!event) {
+          throw new NotFoundException('Мероприятие не найдено');
+        }
 
-    const existingRegistration =
-      await this.registrationsRepository.findOne({
-        where: {
-          eventId,
-          userId,
-        },
+        if (event.date.getTime() <= Date.now()) {
+          throw new BadRequestException('Нельзя записаться на прошедшее мероприятие');
+        }
+
+        const existingRegistration = await manager.findOne(Registration, {
+          where: { eventId, userId },
+        });
+
+        if (existingRegistration) {
+          throw new ConflictException('Вы уже зарегистрированы на это мероприятие');
+        }
+
+        const registrationsCount = await manager.count(Registration, {
+          where: { eventId },
+        });
+
+        if (event.capacity <= 0 || registrationsCount >= event.capacity) {
+          throw new ConflictException('Все места на мероприятие уже заняты');
+        }
+
+        const registration = manager.create(Registration, { eventId, userId });
+        return manager.save(registration);
       });
-
-    if (existingRegistration) {
-      throw new ConflictException(
-        'Вы уже зарегистрированы на это мероприятие',
-      );
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as QueryFailedError & { driverError?: { code?: string } }).driverError
+          ?.code === '23505'
+      ) {
+        throw new ConflictException('Вы уже зарегистрированы на это мероприятие');
+      }
+      throw error;
     }
-
-    const registrationsCount =
-      await this.registrationsRepository.count({
-        where: { eventId },
-      });
-
-    if (registrationsCount >= event.capacity) {
-      throw new ConflictException(
-        'Все места на мероприятие уже заняты',
-      );
-    }
-
-    const registration = this.registrationsRepository.create({
-      eventId,
-      userId,
-    });
-
-    return this.registrationsRepository.save(registration);
   }
 
   async findUserRegistrations(userId: string) {
-  const registrations = await this.registrationsRepository.find({
-    where: { user: { id: userId } },
-    relations: {
-      event: {
-        category: true,
-        organizer: true,
-      }
-    },
-  });
+    const registrations = await this.registrationsRepository.find({
+      where: { user: { id: userId } },
+      relations: {
+        event: {
+          category: true,
+          organizer: true,
+        },
+      },
+    });
 
-  return registrations.map((registration) => registration.event);
-}
+    return registrations
+      .map((registration) => registration.event)
+      .filter((event): event is Event => Boolean(event))
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        location: event.location,
+        price: event.price,
+        capacity: event.capacity,
+        imageUrl: event.imageUrl,
+        category: event.category ? { id: event.category.id, name: event.category.name } : null,
+        organizer: event.organizer
+          ? {
+              id: event.organizer.id,
+              name: event.organizer.name,
+              avatarUrl: event.organizer.avatarUrl,
+            }
+          : null,
+      }));
+  }
 
   async unregister(eventId: string, userId: string) {
     const registration = await this.registrationsRepository.findOne({
