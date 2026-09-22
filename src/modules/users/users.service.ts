@@ -45,7 +45,7 @@ export class UsersService {
       this.jwtService.signAsync(payload, { expiresIn: '7d' }),
     ]);
 
-    await this.updateRefreshToken(savedUser.id, refreshToken)
+    await this.updateRefreshToken(savedUser.id, refreshToken);
 
     return {
       access_token: accessToken,
@@ -198,6 +198,7 @@ export class UsersService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       avatarUrl: user.avatarUrl,
     };
   }

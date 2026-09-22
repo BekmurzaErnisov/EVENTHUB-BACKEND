@@ -15,7 +15,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { RequestWithUser } from 'src/common/interfaces/request-with-user.interface';
 import { multerOptions } from 'src/config/multer.config';
@@ -33,6 +40,9 @@ export class EventsController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Создание нового мероприятия' })
+  @ApiResponse({ status: 201, description: 'Мероприятие успешно создано' })
+  @ApiResponse({ status: 400, description: 'Ошибка валидации данных' })
+  @ApiResponse({ status: 401, description: 'Неавторизованный пользователь' })
   @Post()
   @UseGuards(JwtAuthGuard)
   create(
@@ -43,6 +53,10 @@ export class EventsController {
   }
 
   @ApiOperation({ summary: 'Получение списка мероприятий с фильтрацией' })
+  @ApiResponse({
+    status: 200,
+    description: 'Список мероприятий успешно получен',
+  })
   @Get()
   async findAll(@Query() query: GetEventQueryDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.eventsService.findAll(query);
@@ -54,6 +68,11 @@ export class EventsController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Получение мероприятий текущего организатора' })
+  @ApiResponse({
+    status: 200,
+    description: 'Список мероприятий организатора получен',
+  })
+  @ApiResponse({ status: 401, description: 'Неавторизованный пользователь' })
   @UseGuards(JwtAuthGuard)
   @Get('my')
   findMyEvents(@Req() req: RequestWithUser) {
@@ -63,6 +82,14 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Загрузка обложки для мероприятия' })
   @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 201,
+    description: 'Файл успешно загружен, возвращен путь к нему',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Файл не передан или неверный формат',
+  })
   @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', multerOptions))
@@ -71,6 +98,12 @@ export class EventsController {
   }
 
   @ApiOperation({ summary: 'Получение детальной информации о мероприятии' })
+  @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Информация о мероприятии успешно получена',
+  })
+  @ApiResponse({ status: 404, description: 'Мероприятие не найдено' })
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   async findOne(
@@ -83,6 +116,10 @@ export class EventsController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Обновление мероприятия' })
+  @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Мероприятие успешно обновлено' })
+  @ApiResponse({ status: 403, description: 'Доступ запрещен (не владелец)' })
+  @ApiResponse({ status: 404, description: 'Мероприятие не найдено' })
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
@@ -95,6 +132,10 @@ export class EventsController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Удаление мероприятия' })
+  @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Мероприятие успешно удалено' })
+  @ApiResponse({ status: 403, description: 'Доступ запрещен (не владелец)' })
+  @ApiResponse({ status: 404, description: 'Мероприятие не найдено' })
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(

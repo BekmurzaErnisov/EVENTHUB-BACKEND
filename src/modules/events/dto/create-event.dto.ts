@@ -1,5 +1,15 @@
 import { Transform, Type } from 'class-transformer';
-import {IsDateString,IsInt, IsNotEmpty,IsNumber,IsOptional, IsString, Matches, MaxLength, Min,} from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { IsFutureDate } from '../validators/is-future-date.validator';
 
 export class CreateEventDto {
@@ -21,8 +31,8 @@ export class CreateEventDto {
   @IsString({ message: 'Адрес должен быть строкой' })
   @IsNotEmpty({ message: 'Адрес обязателен' })
   @MaxLength(300)
-  location!: string; 
-  
+  location!: string;
+
   @IsNumber({}, { message: 'Цена должна быть числом' })
   @Min(0, { message: 'Цена не может быть отрицательной' })
   price!: number;
@@ -32,15 +42,15 @@ export class CreateEventDto {
   capacity!: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'ID категории должен быть числом' })
-  categoryId?: number;
-
-  @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   @Matches(/^(\/uploads\/[a-zA-Z0-9._-]+|https?:\/\/\S+)$/, {
     message: 'Некорректная ссылка на изображение',
   })
   imageUrl?: string;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'ID категории должен быть числом' })
+  @IsNotEmpty({ message: 'Категория обязательна' })
+  categoryId!: number;
 }

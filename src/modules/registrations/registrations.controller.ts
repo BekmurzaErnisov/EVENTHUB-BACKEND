@@ -8,7 +8,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RegistrationsService } from './registrations.service';
@@ -23,9 +29,7 @@ interface AuthenticatedRequest extends Request {
 @ApiBearerAuth()
 @Controller('events')
 export class RegistrationsController {
-  constructor(
-    private readonly registrationsService: RegistrationsService,
-  ) {}
+  constructor(private readonly registrationsService: RegistrationsService) {}
 
   @ApiOperation({ summary: 'Получение всех регистраций текущего пользователя' })
   @Get('my/registrations')
@@ -35,6 +39,16 @@ export class RegistrationsController {
   }
 
   @ApiOperation({ summary: 'Регистрация на мероприятие' })
+  @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
+  @ApiResponse({
+    status: 201,
+    description: 'Успешная регистрация на мероприятие',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Места закончились или уже зарегистрирован',
+  })
+  @ApiResponse({ status: 404, description: 'Мероприятие не найдено' })
   @Post(':id/register')
   @UseGuards(JwtAuthGuard)
   register(
@@ -45,6 +59,12 @@ export class RegistrationsController {
   }
 
   @ApiOperation({ summary: 'Отмена регистрации на мероприятие' })
+  @ApiParam({ name: 'id', description: 'UUID мероприятия', type: 'string' })
+  @ApiResponse({ status: 200, description: 'Регистрация успешно отменена' })
+  @ApiResponse({
+    status: 404,
+    description: 'Регистрация или мероприятие не найдено',
+  })
   @Delete(':id/register')
   @UseGuards(JwtAuthGuard)
   unregister(

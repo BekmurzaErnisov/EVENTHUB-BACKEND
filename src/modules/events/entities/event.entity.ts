@@ -30,13 +30,13 @@ export class Event {
       from: (value: string | null) => (value == null ? 0 : Number(value)),
     },
   })
-  price!: number
+  price!: number;
 
   @Column({ type: 'int', default: 0 })
-  capacity!: number
+  capacity!: number;
 
   @Column({ nullable: true })
-  imageUrl?: string
+  imageUrl?: string;
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organizerId' })
@@ -61,5 +61,5 @@ export class Event {
   updatedAt!: Date;
 
   @DeleteDateColumn()
-  deletadAt!: Date
+  deletadAt!: Date;
 }

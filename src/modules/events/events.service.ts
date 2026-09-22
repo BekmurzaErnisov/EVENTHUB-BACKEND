@@ -14,6 +14,10 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { Category } from '../categories/entities/category.entity';
 import { Registration } from '../registrations/entities/registration.entity';
 
+interface UploadedEventFile {
+  filename: string;
+}
+
 @Injectable()
 export class EventsService {
   constructor(
@@ -163,25 +167,25 @@ export class EventsService {
   }
 
   async findOne(id: string, userId?: string) {
-  const event = await this.eventsRepository.findOne({
-    where: { id },
-    relations: {
-      category: true,
-      organizer: true,
-      registrations: true,
-    },
-  });
+    const event = await this.eventsRepository.findOne({
+      where: { id },
+      relations: {
+        category: true,
+        organizer: true,
+        registrations: true,
+      },
+    });
 
-  if (!event) {
-    throw new NotFoundException('Мероприятие не найдено');
+    if (!event) {
+      throw new NotFoundException('Мероприятие не найдено');
+    }
+
+    const isJoined = Boolean(
+      userId && event.registrations?.some((reg) => reg.userId === userId),
+    );
+
+    return this.presentEvent(event, { isJoined });
   }
-
-  const isJoined = Boolean(
-    userId && event.registrations?.some((reg) => reg.userId === userId),
-  );
-
-  return this.presentEvent(event, { isJoined });
-}
 
   async findByOrganizer(organizerId: string): Promise<Event[]> {
     return this.eventsRepository.find({
@@ -189,8 +193,8 @@ export class EventsService {
       relations: {
         category: true,
       },
-      order: { createdAt: 'DESC'}
-    })
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -211,14 +215,14 @@ export class EventsService {
     await this.eventsRepository.softRemove(event);
   }
 
-  handleImageUpload(file?: Express.Multer.File) {
+  handleImageUpload(file?: UploadedEventFile) {
     if (!file) {
-      throw new BadRequestException('Файл не был передан')
+      throw new BadRequestException('Файл не был передан');
     }
 
     return {
-      imageUrl: `/uploads/${file.filename}`
-    }
+      imageUrl: `/uploads/${file.filename}`,
+    };
   }
 
   private presentEvent(event: Event, extra: Record<string, unknown> = {}) {
@@ -239,5 +243,4 @@ export class EventsService {
       ...extra,
     };
   }
-
 }
