@@ -41,7 +41,7 @@ export class UsersService {
 
     const payload = { sub: savedUser.id, email: savedUser.email };
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { expiresIn: '1d' }),
+      this.jwtService.signAsync(payload, { expiresIn: '15m' }),
       this.jwtService.signAsync(payload, { expiresIn: '7d' }),
     ]);
 
@@ -59,15 +59,11 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        passwordHash: true,
-      },
-    });
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('LOWER(user.email) = :email', { email: email.toLowerCase() })
+      .getOne();
   }
 
   async getProfile(userId: string) {
@@ -78,11 +74,16 @@ export class UsersService {
       throw new NotFoundException('Пользователь не найден');
     }
 
-    return user;
+    return this.toPublicUser(user);
   }
 
   async updateProfile(userId: string, dto: UpdateUserDto) {
-    const user = await this.getProfile(userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    const patch: Partial<User> = {};
 
     if (dto.email && dto.email !== user.email) {
       const existingUser = await this.userRepository.findOne({
@@ -93,14 +94,18 @@ export class UsersService {
         throw new ConflictException('Этот email уже используется');
       }
 
-      user.email = dto.email;
+      patch.email = dto.email;
     }
 
     if (dto.name) {
-      user.name = dto.name;
+      patch.name = dto.name;
     }
 
-    return this.userRepository.save(user);
+    if (Object.keys(patch).length > 0) {
+      await this.userRepository.update(userId, patch);
+    }
+
+    return this.getProfile(userId);
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -122,8 +127,10 @@ export class UsersService {
       throw new BadRequestException('Неверный старый пароль');
     }
 
-    user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
-    await this.userRepository.save(user);
+    await this.userRepository.update(userId, {
+      passwordHash: await bcrypt.hash(dto.newPassword, 10),
+      refreshTokenHash: null,
+    });
 
     return { message: 'Пароль успешно изменен' };
   }
@@ -140,15 +147,26 @@ export class UsersService {
   }
 
   async findById(id: string) {
-    return this.userRepository.findOne({ where: { id } });
+    return this.userRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        refreshTokenHash: true,
+      },
+    });
   }
 
   async removeAccount(userId: string) {
-    const user = await this.getProfile(userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
 
     await this.userRepository.softRemove(user);
 
-    return { message: 'Аккаунти успешно удален' };
+    return { message: 'Аккаунт успешно удален' };
   }
 
   async updateAvatar(userId: string, file: Express.Multer.File) {
@@ -161,19 +179,26 @@ export class UsersService {
       throw new NotFoundException('Пользователь не найден');
     }
 
-    user.avatarUrl = `/uploads/${file.filename}`;
-    await this.userRepository.save(user);
+    const avatarUrl = `/uploads/${file.filename}`;
+    await this.userRepository.update(userId, { avatarUrl });
 
-    return {
-      avatarUrl: user.avatarUrl,
-    };
+    return { avatarUrl };
   }
 
   async deleteAvatar(userId: string) {
-  const user = await this.userRepository.findOne({ where: { id: userId } });
-  if (!user) throw new NotFoundException('Пользователь не найден');
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
 
-  user.avatarUrl = null;
-  return this.userRepository.save(user);
-}
+    await this.userRepository.update(userId, { avatarUrl: null });
+    return this.getProfile(userId);
+  }
+
+  private toPublicUser(user: User) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+    };
+  }
 }

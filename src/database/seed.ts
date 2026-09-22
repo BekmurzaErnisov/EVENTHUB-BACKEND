@@ -3,6 +3,7 @@ import { AppModule } from '../app.module';
 import { DataSource } from 'typeorm';
 import { User } from '../modules/users/entities/user.entity';
 import { Category } from '../modules/categories/entities/category.entity';
+import { DEFAULT_CATEGORIES } from '../modules/categories/categories.constants';
 import { Event } from '../modules/events/entities/event.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -30,16 +31,7 @@ async function runSeed() {
   const users = await userRepository.save(userRepository.create(usersData));
 
   console.log('🏷️ Создание категорий...');
-  const categoriesData = [
-    'Концерт',
-    'Лекция',
-    'Выставка',
-    'Спорт',
-    'Мастер-класс',
-    'Кино',
-    'Нетворкинг',
-    'Фестиваль',
-  ];
+  const categoriesData = DEFAULT_CATEGORIES;
 
   const categories = await categoryRepository.save(
     categoriesData.map((name) => categoryRepository.create({ name })),

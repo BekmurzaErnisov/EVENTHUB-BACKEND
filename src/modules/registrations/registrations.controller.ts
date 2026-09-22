@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Req,
   UseGuards,
@@ -26,11 +27,18 @@ export class RegistrationsController {
     private readonly registrationsService: RegistrationsService,
   ) {}
 
+  @ApiOperation({ summary: 'Получение всех регистраций текущего пользователя' })
+  @Get('my/registrations')
+  @UseGuards(JwtAuthGuard)
+  findMyRegistrations(@Req() request: AuthenticatedRequest) {
+    return this.registrationsService.findUserRegistrations(request.user.id);
+  }
+
   @ApiOperation({ summary: 'Регистрация на мероприятие' })
   @Post(':id/register')
   @UseGuards(JwtAuthGuard)
   register(
-    @Param('id') eventId: string,
+    @Param('id', ParseUUIDPipe) eventId: string,
     @Req() request: AuthenticatedRequest,
   ) {
     return this.registrationsService.register(eventId, request.user.id);
@@ -40,16 +48,9 @@ export class RegistrationsController {
   @Delete(':id/register')
   @UseGuards(JwtAuthGuard)
   unregister(
-    @Param('id') eventId: string,
+    @Param('id', ParseUUIDPipe) eventId: string,
     @Req() request: AuthenticatedRequest,
   ) {
     return this.registrationsService.unregister(eventId, request.user.id);
-  }
-
-  @ApiOperation({ summary: 'Получение всех регистраций текущего пользователя' })
-  @Get('my/registrations')
-  @UseGuards(JwtAuthGuard)
-  findMyRegistrations(@Req() request: AuthenticatedRequest) {
-    return this.registrationsService.findUserRegistrations(request.user.id);
   }
 }

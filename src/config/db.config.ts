@@ -9,8 +9,8 @@ export const typeOrmConfig = registerAs(
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_DATABASE || 'postgres',
+    database: process.env.DB_DATABASE || process.env.DB_NAME || 'postgres',
     autoLoadEntities: true,
-    synchronize: true,
+    synchronize: process.env.NODE_ENV !== 'production',
   }),
 );

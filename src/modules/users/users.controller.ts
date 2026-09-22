@@ -19,7 +19,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { multerOptions } from 'src/config/multer.config';
-import type { RequestWithUser } from 'src/common/interfaces/requset-with-user.interface';
+import type { RequestWithUser } from 'src/common/interfaces/request-with-user.interface';
+import { AuthRateLimitGuard } from '../auth/guards/auth-rate-limit.guard';
 
 @ApiTags('Users')
 @Controller('users')
@@ -28,6 +29,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Регистрация пользователя' })
   @ApiResponse({ status: 201, description: 'Пользователь успешно зарегистрирован' })
+  @UseGuards(AuthRateLimitGuard)
   @Post('register')
   async register(@Body() dto: CreateUserDto) {
     return this.usersService.register(dto);
